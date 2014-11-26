@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20141126114457) do
+ActiveRecord::Schema.define(version: 20141126123332) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -26,5 +26,7 @@ ActiveRecord::Schema.define(version: 20141126114457) do
     t.datetime "created_at"
     t.datetime "updated_at"
   end
+
+  add_index "products", ["properties"], name: "products_properties", using: :gin
 
 end
