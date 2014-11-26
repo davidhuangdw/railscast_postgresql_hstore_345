@@ -1,28 +1,54 @@
-== README
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+        # hstore column: store_accessor
+        class Product < ActiveRecord::Base
+          store_accessor :properties, :author, :rating, :runtime
+          validates :runtime, numericality: true, allow_blank: true         # allow validation
+        end
+        # views
+        = f.input :author
+        = f.input :rating
+        = f.input :runtime
+        # strong params: params...permit(...)
 
-Things you may want to cover:
+        # query
+        Product.where("properties -> 'rating' = ?", 'PG-13')
+        Product.where("(properties -> 'runtime')::int > ?", 100)        # need cast if not string
+        Product.where("properties @> 'rating=>PG-13, runtime=>107'")    # '@>' left contains right
+        # gin/gist index supports operators: @>, ?, ?& and ?|
+        # btree/hash index only support '='  --- not very useful, because usually query partial columns
 
-* Ruby version
-
-* System dependencies
-
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+        # update query
+        x = Product.first
+        x.properties[:runtime] = 107
+        x.save!                                         # won't work
+        x.properties = x.properties.merge(runtime:107)  # should always use assignment to update
+        # because it use properties.object_id to indicate whether update, must use assignment to change object_id
 
 
-Please feel free to use a different markup language if you do not plan to run
-<tt>rake doc:app</tt>.
+        # add index
+        rails g migration index_product_properties
+        class IndexProductsProperties < ActiveRecord::Migration
+          def up
+            execute "CREATE INDEX products_properties ON products USING GIN(properties)"
+          end
+
+          def down
+            execute "DROP INDEX products_properties"
+          end
+        end
+
+        # add hstore column: properties
+        rails g scaffold product name category price:decimal description:text properties:hstore:index
+
+        # enable hstore extension
+        rails g migration enable_hstore
+        def up
+          enable_extension :hstore
+        end
+        def down
+          disable_extension :hstore
+        end
+
+        # use pg
+        rails new ... -d postgresql
+        rake db:create
