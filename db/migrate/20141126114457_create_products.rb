@@ -9,6 +9,5 @@ class CreateProducts < ActiveRecord::Migration
 
       t.timestamps
     end
-    add_index :products, :properties
   end
 end

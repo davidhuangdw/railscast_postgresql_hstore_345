@@ -27,6 +27,4 @@ ActiveRecord::Schema.define(version: 20141126114457) do
     t.datetime "updated_at"
   end
 
-  add_index "products", ["properties"], name: "index_products_on_properties", using: :btree
-
 end
